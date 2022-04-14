@@ -21,7 +21,7 @@ msf-pattern_create -l 1600 | python3 Badboy.py --mode inject -c raw-tcp 10.10.11
 ![Inject Cyclic PAttern](img/inject-a-cyclic-pattern-from-stdin.png)
 
 After having injected the cyclic pattern, we can see that the EIP value is being affected, copy the value in EIP
-and supply it to **msf-pattern_create**
+and supply it to **msf-pattern_offset**
 
 ![Get Cyclic PAttern](img/get-cyclic-char-in-eip.png)
 ```
