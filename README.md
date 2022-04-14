@@ -14,7 +14,10 @@ HELP AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 Bad char can be filtered quickly and easily directly from the shell.
 Simply start by providing the Bad char (\x00) or "00" in our case.
-All Badchars needs to be coma seperated like followed : -b "00,41,2f"
+All Badchars needs to be coma seperated like followed : 
+```
+-b "00,41,2f"
+```
 ![Fuzzing](img/inject-testing-badchar-1.png)
 
 Repeat the process until every Bad chars have been filtered out.
