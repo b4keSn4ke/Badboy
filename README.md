@@ -64,6 +64,7 @@ In Immunity Debugger, type the following command in the command box:
 ```
 !mona jmp -r esp -cpb "\x00\x04\x3e\x3f\xe1"
 ```
+![JMP ESP](img/get-jmp-esp-address-from-mona.png)
 Don't forget to revert the bytes of the address, since it is little endian.
 E.g : 625011d3 becomes d3115062
 
