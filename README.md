@@ -4,7 +4,10 @@
 ## Fuzzing
 
 In order to Fuzz the application we need to select the connection type and also supplying the IP, Port and Prefix.
-The Prefix can be HTTP POST parameters or a command from a program, e.g in that context Help would be the Prefix: HELP AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+The Prefix can be HTTP POST parameters or a command from a program, e.g in that context Help would be the Prefix: 
+```
+HELP AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+```
 ![Fuzzing](img/fuzz.png)
 
 ## Testing and Filtering Bad Char
