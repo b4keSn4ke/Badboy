@@ -8,6 +8,9 @@ The Prefix can be HTTP POST parameters or a command from a program, e.g in that 
 ```
 HELP AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 ```
+```
+python3 Badboy.py --mode fuzz -c raw-tcp [IP] [PORT] [PREFIX]
+```
 ![Fuzzing](img/fuzz.png)
 
 ## Testing and Filtering Bad Char
@@ -18,6 +21,9 @@ All Badchars needs to be coma seperated like followed :
 ```
 -b "00,41,2f"
 ```
+```
+python3 Badboy.py --mode inject -c raw-tcp [IP] [PORT] [PREFIX] -off [OFFSET] -b [BADCHARS] 
+```
 ![Fuzzing](img/inject-testing-badchar-1.png)
 
 Repeat the process until every Bad chars have been filtered out.
@@ -27,4 +33,7 @@ Repeat the process until every Bad chars have been filtered out.
 ## Trigger the Exploit 
 Once you have the eliminated all the Bad chars, that you have your Offset and your have the value of EIP.
 Put the Shell code in the place reserved for it in the script and fire the exploit like the screenshot below: 
+```
+python3 Badboy.py --mode inject -c raw-tcp [IP] [PORT] [PREFIX] -off [OFFSET] -eip [EIP/JMP ESP address] 
+```
 ![Fuzzing](img/inject-trigger-shell.png)
